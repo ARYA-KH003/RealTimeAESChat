@@ -1,0 +1,6 @@
+# Ignore MySQL socket files
+data/*.sock
+
+# Ignore specific files
+debug.log
+config.json
