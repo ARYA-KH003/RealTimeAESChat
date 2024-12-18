@@ -44,6 +44,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="register.css">
 </head>
 <body>
+    <div class="AryaTel">
+        AryaTel
+    </div>
     <div class="login-container">
         <h2>Register for AryaTel</h2>
         <form action="register.php" method="post">

@@ -2,6 +2,7 @@ body {
     font-family: 'Arial', sans-serif;
     display: flex;
     justify-content: center;
+    flex-direction: column;
     align-items: center;
     height: 100vh;
     background-color: #f3f4f6;
@@ -16,6 +17,16 @@ body {
     width: 100%;
     max-width: 400px;
     text-align: center;
+}
+
+.AryaTel {
+    text-align: center;
+    font-size: 55px;
+    font-weight: bold;
+    margin-top: 50px;
+    padding-bottom: 50px;
+    color: #4CAF50;
+    margin-bottom: 20px;
 }
 
 h2 {

@@ -1,102 +1,57 @@
 <?php
-session_start();
-include('DBconnection.php');
 
-if (!isset($_SESSION['user_id'])) {
+include('DBconnection.php');
+session_start();
+
+if (!isset($_SESSION['user_id']) || !isset($_GET['receiver_id'])) {
     header("Location: login.php");
     exit();
 }
 
-$current_user_id = $_SESSION['user_id'];
+$sender_id = $_SESSION['user_id'];
+$receiver_id = intval($_GET['receiver_id']);
+$hashed_password = @$_SESSION['password']; // Pass hashed password securely
 
 
-function generate_shared_key($user1_id, $user2_id, $conn) {
-    $sql = "SELECT shared_key FROM user_shared_keys WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("iiii", $user1_id, $user2_id, $user2_id, $user1_id);
-    $stmt->execute();
-    $stmt->store_result();
-    
-    if ($stmt->num_rows > 0) {
-        $stmt->bind_result($shared_key_hex);
-        $stmt->fetch();
-        $stmt->close();
-        return hex2bin($shared_key_hex);  
-    } else {
-        $shared_key = openssl_random_pseudo_bytes(32);
-        $shared_key_hex = bin2hex($shared_key);  
-
-        $sql = "INSERT INTO user_shared_keys (user1_id, user2_id, shared_key) VALUES (?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iis", $user1_id, $user2_id, $shared_key_hex);
-        $stmt->execute();
-        $stmt->close();
-        
-        return $shared_key;  
-    }
-}
-
-
-$sql = "SELECT id, email FROM users WHERE id != $current_user_id";
-$users = mysqli_query($conn, $sql);
-
-function sanitize($data) {
-    return htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
-}
+// Fetch receiver's email
+$sql = "SELECT email FROM users WHERE id = $receiver_id";
+$result = mysqli_query($conn, $sql);
+$receiver_email = ($result && mysqli_num_rows($result) > 0) ? mysqli_fetch_assoc($result)['email'] : 'Unknown User';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <title>Chat with <?= htmlspecialchars($receiver_email) ?></title>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AryaTel Chat</title>
+    <meta name="sender_id" content="<?= $sender_id ?>">
+    <meta name="receiver_id" content="<?= $receiver_id ?>">
+    <meta name="user_password" content="<?= htmlspecialchars($hashed_password) ?>">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link rel="stylesheet" href="chat.css">
-    <script src="chat.js"></script>
+    <script src="chat.js" defer></script>
 </head>
 <body>
-    <div class="chat-container">
-        <h2>Welcome, <?php echo sanitize($_SESSION['email']); ?>!</h2>
-        
-        <div class="user-list">
-            <h3>Users Online</h3>
-            <ul>
-                <?php while ($user = mysqli_fetch_assoc($users)): ?>
-                    <li>
-                        <a href="chat.php?user=<?php echo $user['id']; ?>">
-                            <?php echo sanitize($user['email']); ?>
-                        </a>
-                    </li>
-                <?php endwhile; ?>
+    <header class="header">
+        <nav>
+            <ul class="nav-links">
+                <li><a href="index.php">Home</a></li>
+                <li><a href="chat_selection.php">User Selection</a></li>
+                <li><a href="logout.php">Log Out</a></li>
             </ul>
-        </div>
+        </nav>
+    </header>
 
-        <?php if (isset($_GET['user'])): ?>
-            <?php
-            $chat_user_id = $_GET['user'];
+    <div class="AryaTel">AryaTel</div>
 
-            $shared_key = generate_shared_key($current_user_id, $chat_user_id, $conn);
-
-            $sql = "SELECT * FROM users WHERE id = $chat_user_id";
-            $chat_user = mysqli_query($conn, $sql);
-            if (mysqli_num_rows($chat_user) == 1):
-                $chat_user = mysqli_fetch_assoc($chat_user);
-            ?>
-                <div class="chat-box">
-                    <h3>Chatting with <?php echo sanitize($chat_user['email']); ?></h3>
-                    
-                    <div id="chat-messages"></div>
-
-                    <form id="send-message" method="post" action="send_message.php">
-                        <input type="hidden" name="receiver_id" value="<?php echo $chat_user_id; ?>">
-                        <input type="text" name="message" placeholder="Type your message..." required>
-                        <button type="submit">Send</button>
-                    </form>
-                </div>
-            <?php endif; ?>
-        <?php else: ?>
-            <p>Select a user to chat with from the list.</p>
-        <?php endif; ?>
+    <div class="chat-container">
+        <h2>Chat with <?= htmlspecialchars($receiver_email) ?></h2>
+        <div id="chat-box"></div>
+        <form id="send-message-form" onsubmit="event.preventDefault(); sendMessage();">
+            <input type="text" id="message" placeholder="Type a message" required>
+            <button type="submit">Send</button>
+        </form>
     </div>
 </body>
 </html>
+

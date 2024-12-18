@@ -19,7 +19,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['email'] = $user['email'];
 
-            header("Location: chat.php");
+            header("Location: chat_selection.php");
             exit();
         } else {
             $error = "Invalid password!";
@@ -41,6 +41,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
+    <div class="AryaTel">
+        AryaTel
+    </div>
     <div class="login-container">
         <h2>Login to AryaTel</h2>
 
